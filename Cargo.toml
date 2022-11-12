@@ -1,0 +1,32 @@
+[package]
+name = "ds"
+version = "0.1.0"
+edition = "2021"
+
+# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
+
+[dependencies]
+
+
+[target.x86_64-pc-windows-msvc.dependencies]
+rusqlite = {version = "0.28.0",features = ["bundled"]}
+
+[target.x86_64-unknown-linux-gnu.dependencies]
+rusqlite = {version = "0.28.0",features = ["bundled"]}
+
+
+# native build on host or docker
+[target.arm-unknown-linux-gnueabihf.dependencies]
+rusqlite = {version = "0.28.0",features = ["bundled"]}
+
+# native build on host or docker
+[target.armv7-unknown-linux-gnueabihf.dependencies]
+rusqlite = {version = "0.28.0",features = ["bundled"]}
+
+# native build on host or docker
+[target.armv7h-unknown-linux-gnueabihf.dependencies]
+rusqlite = {version = "0.28.0",features = ["bundled"]}
+
+#use cross-compiled static sqlite3 library
+[target.arm-unknown-linux-musleabihf.dependencies]
+rusqlite = "0.28.0"

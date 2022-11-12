@@ -1,0 +1,134 @@
+name: Create Release Draft
+# git push origin 0.5.3 to push local to remote
+on:
+  workflow_dispatch:
+  push:
+    tags: ["[0-9]+.[0-9]+.[0-9]+*"]
+
+jobs:
+  armv6:
+    name: Build armv6
+    runs-on: ubuntu-latest
+    # after every step is finished,exporting to PATH will be clear,so in next step ,need re-export
+    steps:
+      - name: Check out code
+        uses: actions/checkout@v2
+
+      - name: Set up cargo
+        uses: actions-rs/toolchain@v1
+        with:
+          profile: minimal
+          toolchain: stable
+          override: true
+
+      - name: Add cargo taget armv6
+        run: rustup target add arm-unknown-linux-musleabihf
+
+      - uses: robinraju/release-downloader@v1.4
+        with:
+          repository: "dobefore/musl-cross"
+          tag: "0.1.0"
+          fileName: "arm-linux-musleabihf-cross.tgz"
+
+      - name: Copy musl-cross to home
+        run: cp  arm-linux-musleabihf-cross.tgz $HOME
+
+      - name: unpack cross-compile toolchains musl
+        run: tar -zxvf $HOME/arm-linux-musleabihf-cross.tgz -C $HOME
+    
+      # sqlite3
+      - uses: robinraju/release-downloader@v1.4
+        with:
+          repository: "dobefore/cross-compile-sqlite-musl"
+          tag: "0.1.1"
+          fileName: "sqliteautoconf3390400_0.1.1_linux_armv6.tar.gz"
+          
+      - name: Copy sqlite lib to home
+        run: cp sqliteautoconf3390400_0.1.1_linux_armv6.tar.gz $HOME
+
+      - name: unpack  sqlite3
+        run: |
+          tar -zxvf $HOME/sqliteautoconf3390400_0.1.1_linux_armv6.tar.gz -C $HOME
+          cd $HOME/sqliteautoconf3390400_0.1.1_linux_armv6/
+          cp -r sql/ $HOME/anki-sync-server-rs/
+
+      # build static-linked binary for armv6 (also suitable for aarch64)
+      - name: Build 
+        run: | 
+          export PATH="$HOME/arm-linux-musleabihf-cross/bin:$PATH"
+          cargo build --target arm-unknown-linux-musleabihf --release 
+  
+      - name: Strip binaries (ds)
+        run: $HOME/arm-linux-musleabihf-cross/bin/arm-linux-musleabihf-strip target/arm-unknown-linux-musleabihf/release/ds
+      
+      - name: Create output directory
+        run: mkdir output
+
+      - name: Copy files to output
+        run: |
+          cp target/arm-unknown-linux-musleabihf/release/ds output/
+
+      - name: Upload artifact
+        uses: actions/upload-artifact@v2
+        with:
+          name: armv6
+          path: output/*
+
+
+  release:
+    name: Publish Release
+    runs-on: ubuntu-latest
+    needs:
+      - armv6
+    steps:
+      - name: Check out code
+        uses: actions/checkout@v2
+
+      - name: Determine Release Info
+        id: info
+        env:
+          GITHUB_REF: ${{ github.ref }}
+        run: |
+          VERSION=${GITHUB_REF##*/}
+          MAJOR=${VERSION%%.*}
+          MINOR=${VERSION%.*}
+          MINOR=${MINOR#*.}
+          PATCH=${VERSION##*.}
+          echo "::set-output name=version::${VERSION}"
+          echo "::set-output name=armv6dir::ds_${MAJOR}.${MINOR}.${PATCH}_linux_arm"
+          echo "::set-output name=innerdir::ds-${VERSION}"
+      - name: Create Release Draft
+        id: create_release
+        uses: actions/create-release@v1
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          tag_name: ${{ github.ref }}
+          release_name: ${{ steps.info.outputs.version }} Release
+          draft: true
+      
+      - name: Create armv6 Directory
+        run: mkdir -p ${{ steps.info.outputs.armv6dir }}
+
+      - name: Download armv6 Artifacts
+        uses: actions/download-artifact@v2
+        with:
+          name: armv6
+          path: ${{ steps.info.outputs.armv6dir }}
+
+      - name: Restore armv6 File Modes
+        run: |
+          chmod 755 ${{ steps.info.outputs.armv6dir }}/ds*
+
+      - name: Create armv6 tarball
+        run: tar -zcvf ${{ steps.info.outputs.armv6dir }}.tar.gz ${{ steps.info.outputs.armv6dir }}
+
+      - name: Upload armv6 Artifact
+        uses: actions/upload-release-asset@v1
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          upload_url: ${{ steps.create_release.outputs.upload_url }}
+          asset_path: ./${{ steps.info.outputs.armv6dir }}.tar.gz
+          asset_name: ${{ steps.info.outputs.armv6dir }}.tar.gz
+          asset_content_type: application/gzip
