@@ -55,8 +55,8 @@ jobs:
       # build static-linked binary for armv6 (also suitable for aarch64)
       - name: Build 
         run: | 
-          export PATH="$HOME/arm-linux-musleabihf-cross/bin:$PATH"
-	cp -r $HOME/sql .
+	        export PATH="$HOME/arm-linux-musleabihf-cross/bin:$PATH"
+	        cp -r $HOME/sql .
           cargo build --target arm-unknown-linux-musleabihf --release 
   
       - name: Strip binaries (ds)
