@@ -21,6 +21,17 @@ jobs:
           toolchain: stable
           override: true
 
+      # clone and patch anki library  
+      - name: Clone patch Anki
+        run: sh ./scripts/clone_patch_anki
+
+      - name: Install Protoc
+        run: |
+          PB_REL="https://github.com/protocolbuffers/protobuf/releases"
+          curl -LO $PB_REL/download/v3.15.8/protoc-3.15.8-linux-x86_64.zip
+          mkdir -p $HOME/protoc
+          unzip protoc-3.15.8-linux-x86_64.zip -d $HOME/protoc
+          
       - name: Add cargo taget armv6
         run: rustup target add arm-unknown-linux-musleabihf
 

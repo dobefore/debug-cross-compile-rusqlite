@@ -8,6 +8,8 @@ struct Person {
 }
 
 fn main() -> Result<()> {
+ let col=anki::collection::CollectionBuilder::default().build().unwrap();
+println!("{:?}",col.col_path);
     let conn = Connection::open_in_memory()?;
 
     conn.execute(
