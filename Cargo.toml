@@ -30,4 +30,5 @@ rusqlite = {version = "0.28.0",features = ["bundled"]}
 
 #use cross-compiled static sqlite3 library
 [target.arm-unknown-linux-musleabihf.dependencies]
-rusqlite = "0.28.0"
+#rusqlite = "0.28.0"
+rusqlite = {version = "0.28.0",features = ["bundled"]}
