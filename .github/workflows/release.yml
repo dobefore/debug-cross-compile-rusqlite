@@ -86,8 +86,12 @@ jobs:
           export OPENSSL_INCLUDE_DIR=$HOME/openssl/include
           export OPENSSL_STATIC=true
           
+          export SQLITE3_LIB_DIR=$HOME/sql/lib
+          export SQLITE3_INCLUDE_DIR=$HOME/sql/include
+          export SQLITE3_STATIC=1
+          
           export PATH="$HOME/arm-linux-musleabihf-cross/bin:$PATH"
-          cp -r $HOME/sql .
+          cd anki/rslib/
           cargo build --target arm-unknown-linux-musleabihf --release 
   
       - name: Strip binaries (ds)
